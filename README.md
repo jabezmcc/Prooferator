@@ -8,6 +8,7 @@ This project arose from a need for a constant temperature warm (but not hot) env
 
 I also created a Python-based GUI (using PyQt5) to monitor the temperature and change the set point.
 ## Hardware
+![Igloo_overview](photos/Igloo_overview.jpg)
 
 
 
