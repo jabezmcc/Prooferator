@@ -19,7 +19,7 @@ int IN2 = 3;
 
 // float setPoint_F = 80.0;  //Use these for hard coding set point 
 // float setPoint = (setPoint_F-32.0)*5.0/9.0;
-float setPoint = 26.50;
+float setPoint = 26.67;
 float marginC = 0.5;
 
 void setup(void) {
