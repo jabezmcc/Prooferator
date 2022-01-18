@@ -1,5 +1,5 @@
 # Prooferator
-Arduino-controlled "proofing" box for bread dough.
+## Arduino-controlled "proofing" box for bread dough
 
 This project arose from a need for a constant-temperature, warm (but not hot) environment in which to let sourdough bread "proof" - i.e., grow, rise, mature, etc.  It's made from simple stuff I had lying around the house, mostly:
 - an Igloo picnic cooler
