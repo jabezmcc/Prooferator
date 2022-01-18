@@ -93,7 +93,7 @@
 </string>
       </property>
       <property name="text">
-       <string>Copyright (c)  2021 Jabez McClelland</string>
+       <string>Copyright (c)  2022 Jabez McClelland</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
