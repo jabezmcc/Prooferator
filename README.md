@@ -36,3 +36,6 @@ The Temperature sensor uses the OneWire Arduino library for communication, so on
 
 <img src="photos/Arduino.jpg" width="800">
 <img src="photos/circuit.png" width="700">
+
+## Software
+<img src="photos/screenshot.png" width="900">
