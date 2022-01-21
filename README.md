@@ -53,7 +53,9 @@ Clone the repository. Connect the Arduino to a USB port and plug in the lamp pow
 
 The Arduino code contains the thermostat function. The temperature sensor is read once per second.  If the temperature is lower than the set point minus 0.25&deg; C, the lamp is turned on.  If the temperature is above the set point plus 0.25&deg; C, the lamp is turned off.  The margin of &#177;0.25&deg; C is necessary to keep the light bulb from cycling too much.  It's hard-coded into the Arduino code, but can of course be changed.
 
-The Python GUI provides a plot of the temperature vs time.  Recording can be started or stopped, and the time interval can be chosen.  The setpoint can be chosen in &deg;C or &deg;F.  When the "Update set point and refresh Arduino" button is pressed, the Arduino code is modified and reloaded into the Arduino via <code>os.system()</code> and the <code>arduino --upload</code> command.  This button will need to be pressed at least once when starting with an unprogrammed Arduino. When recording is stopped, or the program is exited, an option to save the data is provided.  The data destination can also be changes if desired.
+The Python GUI provides a plot of the temperature vs time.  Recording can be started or stopped, and the time interval can be chosen.  The setpoint can be chosen in &deg;C or &deg;F.  When the "Update set point and refresh Arduino" button is pressed, the Arduino code is modified and reloaded into the Arduino via <code>os.system()</code> and the <code>arduino --upload</code> command.  This button will need to be pressed at least once when starting with an unprogrammed Arduino. When recording is stopped, or the program is exited, an option to save the data is provided.  The data destination can also be changed if desired.
+
+Once the Arduino is programmed, the proofing box can be run without the monitor software by powering the Arduino though its 5V supply input.
 
 Enjoy your bread!
 
