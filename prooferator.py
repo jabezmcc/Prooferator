@@ -1,3 +1,12 @@
+# Prooferator - Arduino-controlled "proofing" box for bread dough
+# (c) 2022 - Jabez McClelland jabezmcc@gmail.com
+# 
+# Revision history
+#
+# 1/22/20222 - 0.1.1: trapped possible bad inputs.  Added temp units to temp. display and y-axis
+#
+# 1/15/2022 - 0.1.0: First version
+#
 import sys
 import os
 import xlsxwriter
@@ -22,7 +31,7 @@ import bread_img_rc
 Ui_MainWindow, QMainWindow = loadUiType('prooferator.ui') 
 Ui_AboutWindow, QAboutWindow = loadUiType('aboutProoferator.ui')
 
-vers = '0.1.0'
+vers = '0.1.1'
 
 class About(QAboutWindow, Ui_AboutWindow):
     def __init__(self):
@@ -67,18 +76,23 @@ class Main(QMainWindow, Ui_MainWindow):
         self.changeDataButton.clicked.connect(self.change_data_dest)
         self.timeintervalBox.setText('0.1')
         self.setpointC = self.get_arduino_setpoint()
-        self.setpoint = self.setpointC
+        self.setpoint = self.setpointC   
         if self.FradioButton.isChecked():
+            self.currentTempLabel.setText('--.-\xB0F')
             self.setpointF = self.setpointC*9./5. + 32.
             self.setpointBox.setText('{:3.1f}'.format(self.setpointF))
             self.setpoint = self.setpointF
         else:
+            self.currentTempLabel.setText('--.-\xB0C')
             self.setpointBox.setText('{:4.2f}'.format(self.setpointC))
         self.canvas = FigureCanvas(plt.Figure(figsize=(15, 6)))
         self.mainplot_layout.addWidget(self.canvas)
         self.ax = self.canvas.figure.subplots()
         self.ax.set_xlabel("Time")
-        self.ax.set_ylabel("Temperature")
+        if self.FradioButton.isChecked():
+            self.ax.set_ylabel("Temperature, \xB0F")
+        else:
+            self.ax.set_ylabel("Temperature, \xB0C")       
         self.ax.set_title("Proofing Box Temperature Log")
         self.ax.set_position([.15,.15,.75,.75])
         self.ax.tick_params(axis='both',direction='in')
@@ -137,13 +151,18 @@ class Main(QMainWindow, Ui_MainWindow):
         count = 0
         self.ax.cla()
         self.ax.set_xlabel("Time")
-        self.ax.set_ylabel("Temperature")
+        if self.FradioButton.isChecked():
+            self.ax.set_ylabel("Temperature, \xB0F")
+        else:
+            self.ax.set_ylabel("Temperature, \xB0C")  
         self.ax.set_title("Proofing Box Temperature Log")
-        #self.ax.set_xlim(dt.datetime.now(),dt.datetime.now()+dt.timedelta(hours=2))
-        #self.ax.autoscale(enable=True, axis='x')
         while self.takedata:
             count += 1
-            plt.pause(60*float(self.timeintervalBox.text()))
+            try:
+                plt.pause(60*float(self.timeintervalBox.text()))
+            except:
+                QMessageBox.warning(self,'Prooferator error','Invalid entry for time interval')
+                break 
             print('plotting point',count)
             times.append(dt.datetime.now())
             ws.write(count,0,times[-1],wbtimefmt)
@@ -152,7 +171,10 @@ class Main(QMainWindow, Ui_MainWindow):
             else:
                 current_temp = self.get_temp()
             print(current_temp)
-            self.currentTempLabel.setText("{:3.1f}".format(current_temp))
+            unittext = '\xB0C'
+            if self.FradioButton.isChecked():
+                 unittext = '\xB0F'
+            self.currentTempLabel.setText("{:3.1f}".format(current_temp)+unittext)
             temps.append(current_temp)
             ws.write(count,1,temps[-1])
             if self.plotexists:
@@ -176,7 +198,11 @@ class Main(QMainWindow, Ui_MainWindow):
             QMessageBox.information(self,'Prooferator','Please record some data first.')    
 
     def update_setpoint(self):
-        self.setpoint = float(self.setpointBox.text())
+        try:
+            self.setpoint = float(self.setpointBox.text())
+        except:
+            QMessageBox.warning(self,'Prooferator error','Invalid entry for setpoint')
+            return
         self.setpointC = self.setpoint
         if self.FradioButton.isChecked():
             self.setpointC = (self.setpoint - 32.)*5./9.

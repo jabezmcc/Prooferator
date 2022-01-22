@@ -254,7 +254,7 @@
          </property>
          <property name="maximumSize">
           <size>
-           <width>200</width>
+           <width>220</width>
            <height>16777215</height>
           </size>
          </property>
@@ -310,7 +310,7 @@
                </font>
               </property>
               <property name="text">
-               <string>--.-</string>
+               <string>24.6 C</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
