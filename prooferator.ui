@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1076</width>
-    <height>594</height>
+    <height>599</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -71,7 +71,12 @@
           </size>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(183, 225, 174);</string>
+          <string notr="true">QPushButton {
+  background-color: rgb(183, 225, 174);
+}
+QPushButton:pressed {
+  border-style: inset;
+}</string>
          </property>
          <property name="text">
           <string>Start recording</string>
@@ -87,7 +92,12 @@
           </size>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(252, 162, 164);</string>
+          <string notr="true">QPushButton {
+    background-color: rgb(252, 162, 164);
+}
+QPushButton:pressed {
+   border-style: inset;
+}</string>
          </property>
          <property name="text">
           <string>Stop recording</string>
@@ -248,7 +258,7 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>119</width>
+           <width>200</width>
            <height>100</height>
           </size>
          </property>
@@ -282,6 +292,9 @@
           </property>
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_7">
+            <property name="spacing">
+             <number>6</number>
+            </property>
             <item>
              <widget class="QLabel" name="label_4">
               <property name="font">
@@ -331,7 +344,7 @@
      <rect>
       <x>10</x>
       <y>550</y>
-      <width>1031</width>
+      <width>951</width>
       <height>16</height>
      </rect>
     </property>
@@ -372,6 +385,32 @@
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_6"/>
    </widget>
+   <widget class="QLabel" name="rec_label">
+    <property name="geometry">
+     <rect>
+      <x>960</x>
+      <y>550</y>
+      <width>111</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 0, 0);</string>
+    </property>
+    <property name="text">
+     <string>RECORDING</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -379,7 +418,7 @@
      <x>0</x>
      <y>0</y>
      <width>1076</width>
-     <height>24</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

@@ -3,6 +3,9 @@
 # 
 # Revision history
 #
+# 3/12/2022 - 0.1.2: Trapped error when Arduino is unplugged.  Fixed initial readout window size. 
+#                    Tweaked timing, changed data save query behavior.
+#
 # 1/22/20222 - 0.1.1: trapped possible bad inputs.  Added temp units to temp. display and y-axis
 #
 # 1/15/2022 - 0.1.0: First version
@@ -31,7 +34,7 @@ import bread_img_rc
 Ui_MainWindow, QMainWindow = loadUiType('prooferator.ui') 
 Ui_AboutWindow, QAboutWindow = loadUiType('aboutProoferator.ui')
 
-vers = '0.1.1'
+vers = '0.1.2'
 
 class About(QAboutWindow, Ui_AboutWindow):
     def __init__(self):
@@ -60,6 +63,7 @@ class About(QAboutWindow, Ui_AboutWindow):
 class Main(QMainWindow, Ui_MainWindow):
     plotexists = False
     takedata = True
+    datasaved = False
     def __init__(self):
         super(Main,self).__init__()
         self.setupUi(self)
@@ -98,6 +102,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.ax.tick_params(axis='both',direction='in')
         self.ax.set_ylim(self.setpoint*0.75,self.setpoint*1.25)
         self.ax.set_xlim(dt.datetime.now(),dt.datetime.now()+dt.timedelta(hours=2))
+        self.rec_label.setText('')
 
     def openabout(self):
         self.aboutwin = About()
@@ -115,12 +120,19 @@ class Main(QMainWindow, Ui_MainWindow):
     def get_temp(self):
         try:
             ser = serial.Serial('/dev/ttyACM0',9600, timeout=1)
+        except:
+            QMessageBox.critical(self,'Prooferator error','Unable to connect to Arduino.')
+            return 999.99
+        time.sleep(2)
+        try:
             rawdata = ser.readline()
-            ser.close()
             temperature = float(rawdata.decode('UTF-8').strip('\n'))
         except:
             print('Error reading temperature, using old temperature')
-            temperature = float(self.currentTempLabel.text())
+            try:
+                temperature = float(self.currentTempLabel.text())
+            except: 
+                temperature = 20.0 # Kludge in case of error on first point
         if self.FradioButton.isChecked():
             temperature = temperature*9./5. + 32.
         return temperature
@@ -132,13 +144,14 @@ class Main(QMainWindow, Ui_MainWindow):
         return temperature 
 
     def start_data(self):
+        self.takedata = True
+        self.rec_label.setText('RECORDING')  
         try:
             ser = serial.Serial('/dev/ttyACM0',9600, timeout=1)
             dummy = False
         except:
             QMessageBox.warning(self,'Prooferator','No Arduino detected, simulating data')
             dummy = True
-        self.takedata = True        
         self.wb = xlsxwriter.Workbook(self.data_dest)
         wbtimefmt = self.wb.add_format({'num_format': 'mmm d yyyy hh:mm:ss'})
         ws = self.wb.add_worksheet()
@@ -158,11 +171,6 @@ class Main(QMainWindow, Ui_MainWindow):
         self.ax.set_title("Proofing Box Temperature Log")
         while self.takedata:
             count += 1
-            try:
-                plt.pause(60*float(self.timeintervalBox.text()))
-            except:
-                QMessageBox.warning(self,'Prooferator error','Invalid entry for time interval')
-                break 
             print('plotting point',count)
             times.append(dt.datetime.now())
             ws.write(count,0,times[-1],wbtimefmt)
@@ -170,6 +178,8 @@ class Main(QMainWindow, Ui_MainWindow):
                 current_temp = self.get_temp_dummy()
             else:
                 current_temp = self.get_temp()
+            if current_temp==999.99:
+                break
             print(current_temp)
             unittext = '\xB0C'
             if self.FradioButton.isChecked():
@@ -180,6 +190,11 @@ class Main(QMainWindow, Ui_MainWindow):
             if self.plotexists:
                 self.lin.remove()
             self.plot_data(data=[times,temps])
+            try:
+                plt.pause(60*float(self.timeintervalBox.text()))
+            except:
+                QMessageBox.warning(self,'Prooferator error','Invalid entry for time interval')
+                break 
 
     def plot_data(self,data=[[0],[0]]):
         self.lin, = self.ax.plot(data[0],data[1],color='blue')
@@ -189,10 +204,12 @@ class Main(QMainWindow, Ui_MainWindow):
     
     def stop_data(self):
         self.takedata = False
+        self.rec_label.setText('')
         qbox = QMessageBox.question(self,'Prooferator','Do you want to save data?',QMessageBox.Yes,QMessageBox.No)
         if self.plotexists:
             if qbox == QMessageBox.Yes:
                 self.wb.close()
+                self.datasaved = True
                 QMessageBox.information(self,'Prooferator','Acquisition finished.\nData saved in'+self.data_dest)
         else:
             QMessageBox.information(self,'Prooferator','Please record some data first.')    
@@ -239,29 +256,41 @@ class Main(QMainWindow, Ui_MainWindow):
             QMessageBox.information(self,'Prooferator','Arduino successfully updated.')
 
     def exit(self):
-        qbox = QMessageBox.question(self,'Prooferator','Do you want to save data?',QMessageBox.Yes,QMessageBox.No)
-        if qbox==QMessageBox.Yes:
-            self.takedata=False
-            try: 
-                self.wb.close()
-            except:
-                pass
-            sys.exit()
+        if not self.datasaved:
+            qbox = QMessageBox.question(self,'Prooferator','Do you want to save data?',QMessageBox.Yes,QMessageBox.No)
+            if qbox==QMessageBox.Yes:
+                self.takedata=False
+                self.rec_label.setText('')
+                try: 
+                    self.wb.close()
+                    self.datasaved = True
+                except:
+                    pass
+                sys.exit()
+            else:
+                self.takedata=False
+                self.rec_label.setText('')
+                sys.exit()
         else:
-            self.takedata=False
             sys.exit()
 
     def closeEvent(self,event):
-        qbox = QMessageBox.question(self,'Prooferator','Do you want to save data?',QMessageBox.Yes,QMessageBox.No)
-        if qbox==QMessageBox.Yes:
-            self.takedata=False
-            try:
-                self.wb.close()
-            except:
-                pass
-            event.accept()
+        if not self.datasaved:
+            qbox = QMessageBox.question(self,'Prooferator','Do you want to save data?',QMessageBox.Yes,QMessageBox.No)
+            if qbox==QMessageBox.Yes:
+                self.takedata=False
+                self.rec_label.setText('')
+                try:
+                    self.wb.close()
+                    self.datasaved = True
+                except:
+                    pass
+                event.accept()
+            else:
+                self.takedata=False
+                self.rec_label.setText('')
+                event.accept()
         else:
-            self.takedata=False
             event.accept()
 
 if __name__=="__main__":
