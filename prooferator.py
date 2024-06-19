@@ -157,22 +157,24 @@ class Main(QMainWindow, Ui_MainWindow):
         return temperature 
 
     def single_reading(self):
+        print('in single reading')
         try:
             ser = serial.Serial('/dev/ttyACM0',9600, timeout=1)
             dummy = False
         except:
             QMessageBox.warning(self,'Prooferator','No Arduino detected, simulating data')
             dummy = True        
-            if dummy:
-                current_temp = self.get_temp_dummy()
-            else:
-                current_temp = self.get_temp()
-            if current_temp==999.99:
-                return
-            unittext = '\xB0C'
-            if self.FradioButton.isChecked():
-                 unittext = '\xB0F'
-            self.currentTempLabel.setText("{:3.1f}".format(current_temp)+unittext)
+        if dummy:
+            current_temp = self.get_temp_dummy()
+        else:
+            current_temp = self.get_temp()
+        if current_temp==999.99:
+            return
+        unittext = '\xB0C'
+        if self.FradioButton.isChecked():
+             unittext = '\xB0F'
+        self.currentTempLabel.setText("{:3.1f}".format(current_temp)+unittext)
+        print('Temp is',current_temp)
 
 
 
