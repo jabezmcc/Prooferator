@@ -56,10 +56,13 @@
       <x>10</x>
       <y>10</y>
       <width>231</width>
-      <height>358</height>
+      <height>386</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_5">
+     <property name="spacing">
+      <number>11</number>
+     </property>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item alignment="Qt::AlignHCenter">
@@ -231,7 +234,10 @@ QPushButton:pressed {
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0,0">
+       <property name="spacing">
+        <number>1</number>
+       </property>
        <property name="leftMargin">
         <number>10</number>
        </property>
@@ -288,7 +294,7 @@ QPushButton:pressed {
            <number>5</number>
           </property>
           <property name="bottomMargin">
-           <number>5</number>
+           <number>1</number>
           </property>
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -335,6 +341,19 @@ QPushButton:pressed {
          </layout>
         </widget>
        </item>
+       <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+        <widget class="QPushButton" name="refreshTemp">
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Refresh</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
     </layout>
@@ -356,9 +375,9 @@ QPushButton:pressed {
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>380</y>
+      <y>400</y>
       <width>231</width>
-      <height>151</height>
+      <height>131</height>
      </rect>
     </property>
     <property name="text">
@@ -388,11 +407,17 @@ QPushButton:pressed {
    <widget class="QLabel" name="rec_label">
     <property name="geometry">
      <rect>
-      <x>960</x>
+      <x>880</x>
       <y>550</y>
-      <width>111</width>
+      <width>200</width>
       <height>21</height>
      </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>100</width>
+      <height>0</height>
+     </size>
     </property>
     <property name="font">
      <font>
@@ -418,7 +443,7 @@ QPushButton:pressed {
      <x>0</x>
      <y>0</y>
      <width>1076</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

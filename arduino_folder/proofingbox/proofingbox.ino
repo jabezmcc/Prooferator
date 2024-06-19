@@ -1,32 +1,41 @@
 /* Proofing Box Temperature controller using
  *  DS18S20 Temperature Sensor
- *  KOOKYE 2-channel relay module
+ *  HW-482 relay module
  *
  * Jabez McClelland jabezmcc1@yahoo.com
+ * Modified 6/8/2024 for new setup.
     
 */
 #include <OneWire.h>
-int inPin=10; // define D10 as input pin connecting to DS18S20 S pin
+int tempinPin=11; // define D11 as input pin connecting to DS18S20 S pin
+int pwrPin=12; //Use pin 12 as power for the DS18S20.
+int relayPin=8; // Use pin 8 for relay control
+int gndPin=7; //Use pin 7 as GND for LEDs
+int pwrLEDPin=6; //Use pin 6 for power LED
+int onLEDPin=5; //Use pin 5 for relay ON LED
+
+// set up DS18S20
 int incomingByte = 0;
-OneWire ds(inPin); 
-
-//relay connections.  Actually only need ch 1.
-int IN1 = 2;
-int IN2 = 3;
-
-#define ON   0
-#define OFF  1
+OneWire ds(tempinPin); 
 
 // float setPoint_F = 80.0;  //Use these for hard coding set point 
 // float setPoint = (setPoint_F-32.0)*5.0/9.0;
-float setPoint = 26.67;
+float setPoint = 25.56;
 float marginC = 0.5;
 
 void setup(void) {
-  pinMode(13, OUTPUT); 
-  digitalWrite(13, HIGH);  //Use pin 13 as power for the DS18S20
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, LOW);
+  pinMode(pwrPin, OUTPUT); 
+  digitalWrite(pwrPin, HIGH);  
+  pinMode(gndPin, OUTPUT); 
+  digitalWrite(gndPin, LOW);
+  pinMode(pwrLEDPin, OUTPUT); 
+  digitalWrite(pwrLEDPin, HIGH);
+  pinMode(onLEDPin, OUTPUT); 
+  digitalWrite(onLEDPin, LOW);
+   
   Serial.begin(9600);
-  relay_init();//Initialize the relay
 }
  
 void loop(void) {
@@ -84,24 +93,12 @@ void loop(void) {
   // Compare temp to setpoint and switch relay accordingly
   if (tempstr.toFloat() <= setPoint - marginC/2.)
   {
-    relay_SetStatus(ON, OFF);
+    digitalWrite(relayPin, HIGH);
+    digitalWrite(onLEDPin, HIGH);
   }
   if (tempstr.toFloat() > setPoint + marginC/2.)
   {
-    relay_SetStatus(OFF, OFF);
+    digitalWrite(relayPin, LOW);
+    digitalWrite(onLEDPin, LOW);
   }
-}
-
-void relay_init(void)//initialize the relay
-{
-  //set all the relays OUTPUT
-  pinMode(IN1, OUTPUT);
-  pinMode(IN2, OUTPUT);
-  relay_SetStatus(OFF, OFF); //turn off all the relay
-}
-//set the status of relays
-void relay_SetStatus( unsigned char status_1,  unsigned char status_2)
-{
-  digitalWrite(IN1, status_1);
-  digitalWrite(IN2, status_2);
 }
