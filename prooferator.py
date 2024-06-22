@@ -3,6 +3,8 @@
 # 
 # Revision history
 #
+# 6/22/2024 - 0.2.2: Added welcome window
+#
 # 6/18/2024 - 0.2.1: Fixed frozen stop button and added refresh temp button
 #
 # 6/9/2024 - 0.2.0:  Added threading and "updating arduino" message
@@ -35,9 +37,48 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
 Ui_MainWindow, QMainWindow = loadUiType('prooferator.ui') 
+Ui_WelcomeWindow, QWelcomeWindow = loadUiType('welcomewindow.ui')
 Ui_AboutWindow, QAboutWindow = loadUiType('aboutProoferator.ui')
 Ui_UpdatingArduino, QUpdatingArduino = loadUiType('updating_arduino.ui')
 vers = '0.2.1'
+
+class Welcome(QWelcomeWindow, Ui_WelcomeWindow):
+    def __init__(self):
+        super(Welcome,self).__init__()
+        self.setupUi(self)
+        self.currentTemp = get_temp()
+        self.setPoint = float(get_arduino_setpoint())
+        self.gotNumber = self.currentTemp.replace('.','').isdigit()
+        self.updateText()
+        self.wradioButtonF.toggled.connect(lambda:self.unitchanged(self.wradioButtonF))        
+        
+    def updateText(self):
+        # Do temperature label
+        if self.gotNumber:
+            temp = float(self.currentTemp)
+            if self.wradioButtonF.isChecked():
+                tempstring = '{:3.1f}'.format(temp*9./5. + 32)+'\xB0F'
+            else:
+                tempstring = '{:3.1f}'.format(temp)+'\xB0C'
+            self.foundArduinoLabel.setText('Found Arduino...')            
+        else:
+            if self.wradioButtonF.isChecked():
+                tempstring = self.currentTemp+'\xB0F'
+            else:
+                tempstring = self.currentTemp+'\xB0C'             
+            self.foundArduinoLabel.setText('Arduino not found!')
+        self.currentTempLabel.setText('Current temp: '+tempstring) 
+        # Do setpoint label
+        if self.wradioButtonF.isChecked():
+            spstring = '{:3.1f}'.format(self.setPoint*9./5. + 32)+'\xB0F' 
+        else:
+            spstring = '{:3.1f}'.format(self.setPoint)+'\xB0C'
+        self.currentSetpointLabel.setText('Current setpoint: '+spstring)
+
+    def unitchanged(self,b):
+        self.updateText()
+
+
 
 class About(QAboutWindow, Ui_AboutWindow):
     def __init__(self):
@@ -85,6 +126,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.stopButton.clicked.connect(self.stop_data)
         self.updateButton.clicked.connect(self.update_setpoint)
         self.FradioButton.setText('\xB0F')
+        self.FradioButton.toggled.connect(lambda:self.btnchanged(self.FradioButton))
         self.CradioButton.setText('\xB0C')
         cwd = str(pathlib.Path(__file__).parent.resolve())
         self.data_dest = cwd +'/proofingbox.xlsx'
@@ -92,7 +134,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.changeDataButton.clicked.connect(self.change_data_dest)
         self.refreshTemp.clicked.connect(self.single_reading)
         self.timeintervalBox.setText('0.1')
-        self.setpointC = self.get_arduino_setpoint()
+        self.setpointC = float(get_arduino_setpoint())
         self.setpoint = self.setpointC   
         if self.FradioButton.isChecked():
             self.currentTempLabel.setText('--.-\xB0F')
@@ -117,47 +159,17 @@ class Main(QMainWindow, Ui_MainWindow):
         self.ax.set_xlim(dt.datetime.now(),dt.datetime.now()+dt.timedelta(hours=2))
         self.rec_label.setText('')
 
+    def btnchanged(self,b):
+        if self.CradioButton.isChecked():
+            self.setpointBox.setText('{:3.1f}'.format(self.setpointC))
+        else:
+            self.setpointBox.setText('{:3.1f}'.format(self.setpointF))
+                
     def openabout(self):
         self.aboutwin = About()
 
-    def get_arduino_setpoint(self):
-        filename = './arduino_folder/proofingbox/proofingbox.ino'
-        fin = open(filename,'r')
-        lines = fin.readlines()
-        fin.close()
-        for line in lines:
-            s = re.search(r'setPoint = (\d\d.\d\d)',line)
-            if s:
-                return float(s.group(1))
-
-    def get_temp(self):
-        try:
-            ser = serial.Serial('/dev/ttyACM0',9600, timeout=1)
-        except:
-            QMessageBox.critical(self,'Prooferator error','Unable to connect to Arduino.')
-            return 999.99
-        time.sleep(2)
-        try:
-            rawdata = ser.readline()
-            temperature = float(rawdata.decode('UTF-8').strip('\n'))
-        except:
-            print('Error reading temperature, using old temperature')
-            try:
-                temperature = float(self.currentTempLabel.text())
-            except: 
-                temperature = 20.0 # Kludge in case of error on first point
-        if self.FradioButton.isChecked():
-            temperature = temperature*9./5. + 32.
-        return temperature
-    
-    def get_temp_dummy(self):
-        temperature = self.setpointC + 5.*(np.random.rand()-0.5)
-        if self.FradioButton.isChecked():
-            temperature = temperature*9./5. + 32.
-        return temperature 
-
     def single_reading(self):
-        print('in single reading')
+        #print('in single reading')
         try:
             ser = serial.Serial('/dev/ttyACM0',9600, timeout=1)
             dummy = False
@@ -165,18 +177,18 @@ class Main(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self,'Prooferator','No Arduino detected, simulating data')
             dummy = True        
         if dummy:
-            current_temp = self.get_temp_dummy()
+            current_tempC = float(get_temp_dummy(self.setpointC))
         else:
-            current_temp = self.get_temp()
-        if current_temp==999.99:
+            current_tempC = float(get_temp())
+        if current_tempC==999.99:
             return
+        current_temp = current_tempC
         unittext = '\xB0C'
         if self.FradioButton.isChecked():
-             unittext = '\xB0F'
+            current_temp = current_tempC*9./5. + 32.
+            unittext = '\xB0F'
         self.currentTempLabel.setText("{:3.1f}".format(current_temp)+unittext)
-        print('Temp is',current_temp)
-
-
+        #print('Temp is',current_temp)
 
     def start_data(self):
         self.takedata = True
@@ -222,19 +234,20 @@ class Main(QMainWindow, Ui_MainWindow):
             if not self.takedata:
                 break
             if dummy:
-                current_temp = self.get_temp_dummy()
+                current_tempC = float(get_temp_dummy(self.setpointC))
             else:
-                current_temp = self.get_temp()
-            if current_temp==999.99:
+                current_tempC = float(get_temp())
+            if current_tempC==999.99:
                 break
+            current_temp = current_tempC
+            if self.FradioButton.isChecked():
+                current_temp = current_tempC*9./5. + 32. 
             times.append(dt.datetime.now())            
             temps.append(current_temp)
-
             unittext = '\xB0C'
             if self.FradioButton.isChecked():
                  unittext = '\xB0F'
             self.currentTempLabel.setText("{:3.1f}".format(current_temp)+unittext)
-
             ws.write(count,0,times[-1],wbtimefmt)
             ws.write(count,1,temps[-1])
             print('plotting point',count)
@@ -272,6 +285,11 @@ class Main(QMainWindow, Ui_MainWindow):
         if self.FradioButton.isChecked():
             self.setpointC = (self.setpoint - 32.)*5./9.
         self.window = UpdatingArduino()
+        
+        qtRectangle = self.window.frameGeometry()
+        centerPoint = QDesktopWidget().availableGeometry().center()
+        qtRectangle.moveCenter(centerPoint)
+        self.window.move(qtRectangle.topLeft())
         self.window.show()
         self.helper = Helper()
         self.helper.finished.connect(self.window.close)
@@ -332,6 +350,36 @@ class Main(QMainWindow, Ui_MainWindow):
         else:
             event.accept()
 
+def get_arduino_setpoint():
+    # returns last programmed arduino setpoint in C as text
+    filename = './arduino_folder/proofingbox/proofingbox.ino'
+    fin = open(filename,'r')
+    lines = fin.readlines()
+    fin.close()
+    for line in lines:
+        s = re.search(r'setPoint = (\d\d.\d\d)',line)
+        if s:
+            return s.group(1)
+            
+def get_temp():
+    # returns current temp in C as text
+    try:
+        ser = serial.Serial('/dev/ttyACM0',9600, timeout=1)
+    except:
+        return '--.-'
+    time.sleep(2)
+    try:
+        rawdata = ser.readline()
+        temperature = rawdata.decode('UTF-8').strip('\n')
+    except:
+        print('Error reading temperature')
+        temperature = 20.0 # Kludge in case of error 
+    return temperature
+
+def get_temp_dummy(setpoint):
+    temperature = setpoint + 5.*(np.random.rand()-0.5)
+    return "{:4.2f}".format(temperature)
+
 def update_arduino(helper,container):
     setpointtext = "{:4.2f}".format(container['sp'])
     print('UpdatingArduino with setpoint = ',setpointtext)
@@ -357,6 +405,8 @@ def update_arduino(helper,container):
 
 if __name__=="__main__":
     app = QApplication(sys.argv)
+    welcome = Welcome()
+    welcome.exec()
     main = Main()
     qtRectangle = main.frameGeometry()
     centerPoint = QDesktopWidget().availableGeometry().center()

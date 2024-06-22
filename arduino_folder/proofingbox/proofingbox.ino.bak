@@ -20,7 +20,7 @@ OneWire ds(tempinPin);
 
 // float setPoint_F = 80.0;  //Use these for hard coding set point 
 // float setPoint = (setPoint_F-32.0)*5.0/9.0;
-float setPoint = 25.56;
+float setPoint = 27.22;
 float marginC = 0.5;
 
 void setup(void) {
